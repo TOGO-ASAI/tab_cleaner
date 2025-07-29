@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Tab Cleaner Extension",
+  "version": "1.0.0",
+  "description": "Clean and manage your browser tabs efficiently",
+  "permissions": [
+    "tabs",
+    "storage",
+    "alarms",
+    "notifications"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Tab Cleaner"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "css": ["content/content.css"]
+    }
+  ],
+  "icons": {
+    "128": "icons/icon.png"
+  }
+}

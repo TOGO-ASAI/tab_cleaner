@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Tab Cleaner</h1>
+    
+    <div class="settings">
+      <h3>Inactive Tab Settings</h3>
+      <div class="setting-group">
+        <label for="inactiveTime">Close tabs inactive for:</label>
+        <select id="inactiveTime">
+          <option value="30">30 minutes</option>
+          <option value="60">1 hour</option>
+          <option value="180">3 hours</option>
+          <option value="360">6 hours</option>
+          <option value="720">12 hours</option>
+          <option value="1440">24 hours</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <label>
+          <input type="checkbox" id="autoCleanup"> Auto cleanup
+        </label>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button id="closeInactiveTabs" class="primary">Close Inactive Tabs</button>
+      <button id="previewInactiveTabs">Preview Inactive Tabs</button>
+      <button id="closeAllTabs">Close All Tabs</button>
+      <button id="closeDuplicates">Close Duplicates</button>
+    </div>
+    
+    <div class="info">
+      <p id="tabCount">Loading...</p>
+      <p id="inactiveCount">Inactive tabs: 0</p>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

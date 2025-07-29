@@ -1,0 +1,48 @@
+name: Chrome Extension Test
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  test-and-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        id: test
+        run: |
+          echo "🧪 テスト実行中..."
+          if npm test -- --passWithNoTests --watchAll=false 2>&1 | tee test-output.log; then
+            echo "✅ テスト成功"
+            echo "test_status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ テスト失敗"
+            echo "test_status=failed" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+      - name: Auto-request fix from Claude on failure
+        if: steps.test.outputs.test_status == 'failed'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failureReport = `
+            # 🚨 自動テスト失敗 - 修正が必要です
+            @claude 自動テストで問題が検出されました。エラーログを分析して修正してください。
+            
+            \`\`\`
+            ${require('fs').readFileSync('test-output.log', 'utf8')}
+            \`\`\`
+            `;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: failureReport
+            });
+            

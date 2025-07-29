@@ -1,0 +1,117 @@
+body {
+  width: 350px;
+  height: 500px;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  padding: 20px;
+}
+
+h1 {
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+.settings {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid #e1e4e8;
+}
+
+.settings h3 {
+  color: #333;
+  font-size: 14px;
+  margin: 0 0 15px 0;
+  font-weight: 600;
+}
+
+.setting-group {
+  margin-bottom: 12px;
+}
+
+.setting-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.setting-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: white;
+}
+
+.setting-group input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.1);
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 12px;
+  border: none;
+  border-radius: 5px;
+  background-color: #6c757d;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-weight: 500;
+}
+
+button.primary {
+  background-color: #28a745;
+  font-weight: 600;
+}
+
+button.primary:hover {
+  background-color: #218838;
+}
+
+button:hover {
+  background-color: #5a6268;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button.primary:active {
+  background-color: #1e7e34;
+}
+
+.info {
+  text-align: center;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  border: 1px solid #e1e4e8;
+}
+
+.info p {
+  margin: 0 0 8px 0;
+  color: #666;
+  font-size: 12px;
+}
+
+.info p:last-child {
+  margin-bottom: 0;
+}
