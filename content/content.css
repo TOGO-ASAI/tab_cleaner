@@ -1,25 +1,39 @@
 /* Tab Cleaner Extension Content Styles */
 
 .tab-cleaner-highlight {
-  border: 2px solid #4285f4 !important;
-  box-shadow: 0 0 10px rgba(66, 133, 244, 0.3) !important;
+  border: 2px solid #667eea !important;
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.4) !important;
+  border-radius: 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .tab-cleaner-notification {
   position: fixed;
-  top: 10px;
-  right: 10px;
-  background-color: #4285f4;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
-  padding: 10px 15px;
-  border-radius: 5px;
-  font-family: Arial, sans-serif;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
   font-size: 14px;
+  font-weight: 500;
   z-index: 10000;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transform: translateX(100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tab-cleaner-notification.show {
   opacity: 1;
+  transform: translateX(0);
+}
+
+.tab-cleaner-notification::before {
+  content: '🧹';
+  margin-right: 8px;
+  font-size: 16px;
 }

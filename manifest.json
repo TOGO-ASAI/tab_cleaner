@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Tab Cleaner Extension",
   "version": "1.0.0",
-  "description": "Clean and manage your browser tabs efficiently",
+  "description": "🧹 Modern tab management with smart cleanup and organization features",
   "permissions": [
     "tabs",
     "storage",
