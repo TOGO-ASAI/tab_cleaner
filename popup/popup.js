@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function loadSettings() {
     chrome.storage.sync.get(['inactiveTime', 'autoCleanup'], function(result) {
+      if (chrome.runtime.lastError) {
+        return;
+      }
       inactiveTimeSelect.value = result.inactiveTime || '60';
       autoCleanupCheckbox.checked = result.autoCleanup || false;
     });
@@ -20,18 +23,27 @@ document.addEventListener('DOMContentLoaded', function() {
       inactiveTime: parseInt(inactiveTimeSelect.value),
       autoCleanup: autoCleanupCheckbox.checked
     };
-    chrome.storage.sync.set(settings);
-    
-    if (settings.autoCleanup) {
-      chrome.runtime.sendMessage({action: 'enableAutoCleanup', time: settings.inactiveTime});
-    } else {
-      chrome.runtime.sendMessage({action: 'disableAutoCleanup'});
-    }
+    chrome.storage.sync.set(settings, function() {
+      if (chrome.runtime.lastError) {
+        return;
+      }
+      
+      if (settings.autoCleanup) {
+        chrome.runtime.sendMessage({action: 'enableAutoCleanup', time: settings.inactiveTime});
+      } else {
+        chrome.runtime.sendMessage({action: 'disableAutoCleanup'});
+      }
+    });
   }
 
   function getInactiveTabs(inactiveMinutes, callback) {
     const cutoffTime = Date.now() - (inactiveMinutes * 60 * 1000);
     chrome.tabs.query({}, function(tabs) {
+      if (chrome.runtime.lastError) {
+        callback([]);
+        return;
+      }
+      
       const currentTab = tabs.find(tab => tab.active);
       const inactiveTabs = tabs.filter(tab => 
         tab.lastAccessed < cutoffTime && 
@@ -44,6 +56,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function updateTabCounts() {
     chrome.tabs.query({}, function(tabs) {
+      if (chrome.runtime.lastError) {
+        tabCountElement.textContent = 'Total tabs: Error';
+        inactiveCountElement.textContent = 'Inactive tabs: Error';
+        return;
+      }
+      
       tabCountElement.textContent = `Total tabs: ${tabs.length}`;
       
       const inactiveMinutes = parseInt(inactiveTimeSelect.value);
@@ -72,7 +90,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (confirm(`Close ${inactiveTabs.length} tabs inactive for more than ${timeStr}?`)) {
         const tabIds = inactiveTabs.map(tab => tab.id);
         chrome.tabs.remove(tabIds, function() {
-          updateTabCounts();
+          if (!chrome.runtime.lastError) {
+            updateTabCounts();
+          }
         });
       }
     });
@@ -100,15 +120,28 @@ document.addEventListener('DOMContentLoaded', function() {
   closeAllTabsBtn.addEventListener('click', function() {
     if (confirm('Close all tabs? This action cannot be undone.')) {
       chrome.tabs.query({}, function(tabs) {
+        if (chrome.runtime.lastError) {
+          return;
+        }
+        
         const currentTab = tabs.find(tab => tab.active);
         const tabIds = tabs.filter(tab => tab.id !== currentTab.id).map(tab => tab.id);
-        chrome.tabs.remove(tabIds);
+        chrome.tabs.remove(tabIds, function() {
+          if (!chrome.runtime.lastError) {
+            updateTabCounts();
+          }
+        });
       });
     }
   });
 
   closeDuplicatesBtn.addEventListener('click', function() {
     chrome.tabs.query({}, function(tabs) {
+      if (chrome.runtime.lastError) {
+        alert('Error accessing tabs.');
+        return;
+      }
+      
       const urlSet = new Set();
       const duplicateIds = [];
       
@@ -123,7 +156,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (duplicateIds.length > 0) {
         if (confirm(`Close ${duplicateIds.length} duplicate tabs?`)) {
           chrome.tabs.remove(duplicateIds, function() {
-            updateTabCounts();
+            if (!chrome.runtime.lastError) {
+              updateTabCounts();
+            }
           });
         }
       } else {
