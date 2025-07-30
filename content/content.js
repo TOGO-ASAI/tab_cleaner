@@ -1,16 +1,18 @@
-console.log('Tab Cleaner content script loaded');
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'getPageInfo') {
-    const pageInfo = {
-      title: document.title,
-      url: window.location.href,
-      timestamp: Date.now()
-    };
-    sendResponse(pageInfo);
+  try {
+    if (request.action === 'getPageInfo') {
+      const pageInfo = {
+        title: document.title,
+        url: window.location.href,
+        timestamp: Date.now()
+      };
+      sendResponse(pageInfo);
+    }
+  } catch (error) {
+    sendResponse({error: 'Failed to get page info'});
   }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('Page loaded:', document.title);
+  // Page loaded - no action needed
 });

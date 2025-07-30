@@ -1,7 +1,8 @@
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Tab Cleaner Extension installed');
-  
   chrome.storage.sync.get(['autoCleanup', 'inactiveTime'], function(result) {
+    if (chrome.runtime.lastError) {
+      return;
+    }
     if (result.autoCleanup) {
       setupAutoCleanup(result.inactiveTime || 60);
     }
@@ -9,10 +10,14 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'enableAutoCleanup') {
-    setupAutoCleanup(message.time);
-  } else if (message.action === 'disableAutoCleanup') {
-    chrome.alarms.clear('autoCleanup');
+  try {
+    if (message.action === 'enableAutoCleanup') {
+      setupAutoCleanup(message.time);
+    } else if (message.action === 'disableAutoCleanup') {
+      chrome.alarms.clear('autoCleanup');
+    }
+  } catch (error) {
+    // Handle errors silently in production
   }
 });
 
@@ -31,12 +36,14 @@ function setupAutoCleanup(inactiveMinutes) {
     delayInMinutes: checkIntervalMinutes,
     periodInMinutes: checkIntervalMinutes
   });
-  
-  console.log(`Auto cleanup enabled: checking every ${checkIntervalMinutes} minutes for tabs inactive longer than ${inactiveMinutes} minutes`);
 }
 
 function performAutoCleanup() {
   chrome.storage.sync.get(['inactiveTime', 'autoCleanup'], function(result) {
+    if (chrome.runtime.lastError) {
+      return;
+    }
+    
     if (!result.autoCleanup) {
       chrome.alarms.clear('autoCleanup');
       return;
@@ -46,6 +53,10 @@ function performAutoCleanup() {
     const cutoffTime = Date.now() - (inactiveMinutes * 60 * 1000);
     
     chrome.tabs.query({}, function(tabs) {
+      if (chrome.runtime.lastError) {
+        return;
+      }
+      
       const currentTab = tabs.find(tab => tab.active);
       const inactiveTabs = tabs.filter(tab => 
         tab.lastAccessed < cutoffTime && 
@@ -55,14 +66,19 @@ function performAutoCleanup() {
       
       if (inactiveTabs.length > 0) {
         const tabIds = inactiveTabs.map(tab => tab.id);
-        chrome.tabs.remove(tabIds);
-        console.log(`Auto cleanup: closed ${inactiveTabs.length} inactive tabs`);
-        
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icons/icon48.png',
-          title: 'Tab Cleaner',
-          message: `Auto cleanup: closed ${inactiveTabs.length} inactive tabs`
+        chrome.tabs.remove(tabIds, function() {
+          if (chrome.runtime.lastError) {
+            return;
+          }
+          
+          chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'icons/icon48.png',
+            title: 'Tab Cleaner',
+            message: `Auto cleanup: closed ${inactiveTabs.length} inactive tabs`
+          }, function() {
+            // Notification created, ignore any errors
+          });
         });
       }
     });
@@ -70,11 +86,9 @@ function performAutoCleanup() {
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete') {
-    console.log('Tab updated:', tab.url);
-  }
+  // Tab updated event - no action needed
 });
 
 chrome.action.onClicked.addListener((tab) => {
-  console.log('Extension icon clicked');
+  // Extension icon clicked - handled by popup
 });
