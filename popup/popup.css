@@ -255,6 +255,18 @@ button.primary:active {
   transform: translateY(0);
 }
 
+button.group-btn {
+  background: linear-gradient(135deg, var(--success-color), #2f855a);
+  color: white;
+  font-weight: 600;
+}
+
+button.group-btn:hover {
+  background: linear-gradient(135deg, var(--success-hover), #276749);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
 .info {
   background: var(--surface);
   border-radius: var(--radius-lg);

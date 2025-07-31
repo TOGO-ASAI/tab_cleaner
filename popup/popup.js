@@ -3,10 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const closeDuplicatesBtn = document.getElementById('closeDuplicates');
   const closeInactiveTabsBtn = document.getElementById('closeInactiveTabs');
   const previewInactiveTabsBtn = document.getElementById('previewInactiveTabs');
+  const groupTabsByDomainBtn = document.getElementById('groupTabsByDomain');
+  const ungroupAllTabsBtn = document.getElementById('ungroupAllTabs');
   const inactiveTimeSelect = document.getElementById('inactiveTime');
   const autoCleanupCheckbox = document.getElementById('autoCleanup');
   const tabCountElement = document.getElementById('tabCount');
   const inactiveCountElement = document.getElementById('inactiveCount');
+  const groupCountElement = document.getElementById('groupCount');
   
   // Pin and favorite elements
   const showPinnedTabsBtn = document.getElementById('showPinnedTabs');
@@ -68,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (chrome.runtime.lastError) {
         tabCountElement.textContent = 'Total tabs: Error';
         inactiveCountElement.textContent = 'Inactive tabs: Error';
+        groupCountElement.textContent = 'Tab groups: Error';
         pinnedCountElement.textContent = 'Pinned tabs: Error';
         favoriteCountElement.textContent = 'Favorite tabs: Error';
         return;
@@ -82,6 +86,14 @@ document.addEventListener('DOMContentLoaded', function() {
       getInactiveTabs(inactiveMinutes, function(inactiveTabs) {
         inactiveCountElement.textContent = `Inactive tabs: ${inactiveTabs.length}`;
       });
+
+      chrome.tabGroups.query({}, function(groups) {
+        if (chrome.runtime.lastError) {
+          groupCountElement.textContent = 'Tab groups: Error';
+          return;
+        }
+        groupCountElement.textContent = `Tab groups: ${groups.length}`;
+      });
       
       getFavoriteTabs(function(favoriteTabs) {
         favoriteCountElement.textContent = `Favorite tabs: ${favoriteTabs.length}`;
@@ -94,6 +106,108 @@ document.addEventListener('DOMContentLoaded', function() {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
+  }
+
+  function getDomainFromUrl(url) {
+    try {
+      const domain = new URL(url).hostname;
+      return domain.replace(/^www\./, '');
+    } catch {
+      return 'other';
+    }
+  }
+
+  function getGroupColors() {
+    return ['blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
+  }
+
+  function groupTabsByDomain() {
+    chrome.tabs.query({}, function(tabs) {
+      if (chrome.runtime.lastError) {
+        alert('Error accessing tabs.');
+        return;
+      }
+
+      const domainGroups = {};
+      const pinnedTabs = [];
+      
+      tabs.forEach(tab => {
+        if (tab.pinned) {
+          pinnedTabs.push(tab);
+          return;
+        }
+        
+        const domain = getDomainFromUrl(tab.url);
+        if (!domainGroups[domain]) {
+          domainGroups[domain] = [];
+        }
+        domainGroups[domain].push(tab);
+      });
+
+      const colors = getGroupColors();
+      let colorIndex = 0;
+      let groupsCreated = 0;
+
+      Object.entries(domainGroups).forEach(([domain, domainTabs]) => {
+        if (domainTabs.length < 2) return;
+
+        const tabIds = domainTabs.map(tab => tab.id);
+        const groupColor = colors[colorIndex % colors.length];
+        
+        chrome.tabs.group({ tabIds: tabIds }, function(groupId) {
+          if (chrome.runtime.lastError) {
+            return;
+          }
+          
+          chrome.tabGroups.update(groupId, {
+            title: domain,
+            color: groupColor
+          }, function() {
+            if (!chrome.runtime.lastError) {
+              groupsCreated++;
+            }
+          });
+        });
+        
+        colorIndex++;
+      });
+
+      setTimeout(() => {
+        if (groupsCreated > 0) {
+          alert(`Created ${groupsCreated} tab groups by domain.`);
+          updateTabCounts();
+        } else {
+          alert('No groups created. Need at least 2 tabs per domain to create groups.');
+        }
+      }, 500);
+    });
+  }
+
+  function ungroupAllTabs() {
+    chrome.tabGroups.query({}, function(groups) {
+      if (chrome.runtime.lastError) {
+        alert('Error accessing tab groups.');
+        return;
+      }
+
+      if (groups.length === 0) {
+        alert('No tab groups found.');
+        return;
+      }
+
+      if (confirm(`Ungroup all ${groups.length} tab groups?`)) {
+        groups.forEach(group => {
+          chrome.tabs.ungroup(group.id, function() {
+            // Ignore errors - some groups might already be removed
+          });
+        });
+        
+        setTimeout(() => {
+          alert('All tab groups have been ungrouped.');
+          updateTabCounts();
+        }, 300);
+      }
+    });
   }
 
   closeInactiveTabsBtn.addEventListener('click', function() {
@@ -191,6 +305,9 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   autoCleanupCheckbox.addEventListener('change', saveSettings);
+
+  groupTabsByDomainBtn.addEventListener('click', groupTabsByDomain);
+  ungroupAllTabsBtn.addEventListener('click', ungroupAllTabs);
 
   // Pin and favorite functions
   function getFavoriteTabs(callback) {
