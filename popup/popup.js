@@ -496,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function displayManageFavorites() {
     chrome.tabs.query({}, function(allTabs) {
       if (chrome.runtime.lastError) {
-        alert('Error accessing tabs.');
+        alert('Failed to load tabs: ' + chrome.runtime.lastError.message + '. Please try again.');
         return;
       }
       
