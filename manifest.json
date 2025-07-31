@@ -5,6 +5,7 @@
   "description": "🧹 Modern tab management with smart cleanup and organization features",
   "permissions": [
     "tabs",
+    "tabGroups",
     "storage",
     "alarms",
     "notifications"
