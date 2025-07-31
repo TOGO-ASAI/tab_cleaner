@@ -29,6 +29,36 @@
       </div>
     </div>
 
+    <div class="sessions">
+      <h3>📂 Session Management</h3>
+      <div class="session-controls">
+        <div class="session-input-group">
+          <input type="text" id="sessionName" placeholder="Enter session name...">
+          <button id="saveSession">💾 Save</button>
+        </div>
+        <div class="saved-sessions" id="savedSessions">
+          <!-- Saved sessions will be populated here -->
+        </div>
+      </div>
+    </div>
+
+    <div class="recovery">
+      <h3>🔄 Recently Closed</h3>
+      <div class="recovery-controls">
+        <div class="recently-closed" id="recentlyClosed">
+          <!-- Recently closed tabs will be populated here -->
+        </div>
+        <button id="clearHistory" class="small">🗑️ Clear History</button>
+      </div>
+    </div>
+
+    <div class="suggestions">
+      <h3>🎯 Smart Suggestions</h3>
+      <div class="suggestions-list" id="suggestionsList">
+        <!-- Smart suggestions will be populated here -->
+      </div>
+    </div>
+
     <div class="buttons">
       <button id="closeInactiveTabs" class="primary">🚀 Close Inactive Tabs</button>
       <button id="previewInactiveTabs">👀 Preview Inactive Tabs</button>
@@ -39,6 +69,28 @@
     <div class="info">
       <p id="tabCount">Loading...</p>
       <p id="inactiveCount">Inactive tabs: 0</p>
+    </div>
+
+    <div class="statistics">
+      <h3>📊 Statistics</h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="totalTabsClosed">0</div>
+          <div class="stat-label">Tabs Cleaned</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="memoryFreed">0MB</div>
+          <div class="stat-label">Memory Freed</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="sessionsCreated">0</div>
+          <div class="stat-label">Sessions Saved</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="tabsRestored">0</div>
+          <div class="stat-label">Tabs Restored</div>
+        </div>
+      </div>
     </div>
   </div>
   <script src="popup.js"></script>
