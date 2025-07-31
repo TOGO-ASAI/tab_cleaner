@@ -66,6 +66,21 @@ function performAutoCleanup() {
       
       if (inactiveTabs.length > 0) {
         const tabIds = inactiveTabs.map(tab => tab.id);
+        
+        // Save to closed tabs history before removing
+        const tabsToSave = inactiveTabs.map(tab => ({
+          url: tab.url,
+          title: tab.title,
+          timestamp: Date.now(),
+          id: Math.random().toString(36).substr(2, 9)
+        }));
+
+        chrome.storage.local.get(['closedTabsHistory'], function(result) {
+          const history = result.closedTabsHistory || [];
+          const newHistory = [...tabsToSave, ...history].slice(0, 20);
+          chrome.storage.local.set({ closedTabsHistory: newHistory });
+        });
+
         chrome.tabs.remove(tabIds, function() {
           if (chrome.runtime.lastError) {
             return;
