@@ -336,7 +336,15 @@ document.addEventListener('DOMContentLoaded', function() {
         dateAdded: Date.now()
       };
       
-      const exists = favoriteTabs.some(fav => fav.url === tab.url);
+      const normalizedTabUrl = new URL(tab.url);
+      normalizedTabUrl.search = '';
+      normalizedTabUrl.hash = '';
+      const exists = favoriteTabs.some(fav => {
+        const normalizedFavUrl = new URL(fav.url);
+        normalizedFavUrl.search = '';
+        normalizedFavUrl.hash = '';
+        return normalizedFavUrl.toString() === normalizedTabUrl.toString();
+      });
       if (!exists) {
         favoriteTabs.push(favoriteTab);
         saveFavoriteTabs(favoriteTabs, function() {
