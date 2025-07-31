@@ -36,9 +36,22 @@
       <button id="closeDuplicates">🔄 Close Duplicates</button>
     </div>
     
+    <div class="favorites-section">
+      <h3>📌 Pinned & Favorite Tabs</h3>
+      <div class="tabs-controls">
+        <button id="showPinnedTabs">📌 Show Pinned Tabs</button>
+        <button id="showFavoriteTabs">⭐ Show Favorites</button>
+        <button id="manageFavorites">⚙️ Manage Favorites</button>
+      </div>
+      <div id="pinnedTabsList" class="tab-list hidden"></div>
+      <div id="favoriteTabsList" class="tab-list hidden"></div>
+    </div>
+
     <div class="info">
       <p id="tabCount">Loading...</p>
       <p id="inactiveCount">Inactive tabs: 0</p>
+      <p id="pinnedCount">Pinned tabs: 0</p>
+      <p id="favoriteCount">Favorite tabs: 0</p>
     </div>
   </div>
   <script src="popup.js"></script>
