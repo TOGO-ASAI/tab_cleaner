@@ -367,9 +367,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const favicon = document.createElement('img');
     favicon.className = 'tab-favicon';
-    favicon.src = tab.favIconUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" fill="%23f0f0f0"/></svg>';
+    favicon.src = tab.favIconUrl || FALLBACK_FAVICON_SVG;
     favicon.onerror = function() {
-      this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" fill="%23f0f0f0"/></svg>';
+      this.src = FALLBACK_FAVICON_SVG;
     };
     
     const tabInfo = document.createElement('div');
