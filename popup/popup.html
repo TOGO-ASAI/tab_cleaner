@@ -29,13 +29,60 @@
       </div>
     </div>
 
-    <div class="buttons">
-      <button id="closeInactiveTabs" class="primary">🚀 Close Inactive Tabs</button>
-      <button id="previewInactiveTabs">👀 Preview Inactive Tabs</button>
-      <button id="groupTabsByDomain" class="group-btn">📁 Group by Domain</button>
-      <button id="ungroupAllTabs" class="group-btn">📂 Ungroup All</button>
-      <button id="closeAllTabs">🗑️ Close All Tabs</button>
-      <button id="closeDuplicates">🔄 Close Duplicates</button>
+    <div class="action-sections">
+      <!-- Primary Actions -->
+      <div class="action-section primary-actions">
+        <h4 class="section-title">
+          <span class="section-icon">⚡</span>
+          Quick Actions
+        </h4>
+        <div class="button-group">
+          <button id="closeInactiveTabs" class="primary action-btn">
+            <span class="btn-icon">🚀</span>
+            <span class="btn-text">Close Inactive</span>
+          </button>
+          <button id="previewInactiveTabs" class="action-btn">
+            <span class="btn-icon">👀</span>
+            <span class="btn-text">Preview</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Organization Actions -->
+      <div class="action-section organization-actions">
+        <h4 class="section-title">
+          <span class="section-icon">📁</span>
+          Organization
+        </h4>
+        <div class="button-group horizontal">
+          <button id="groupTabsByDomain" class="group-btn action-btn">
+            <span class="btn-icon">📁</span>
+            <span class="btn-text">Group by Domain</span>
+          </button>
+          <button id="ungroupAllTabs" class="group-btn action-btn">
+            <span class="btn-icon">📂</span>
+            <span class="btn-text">Ungroup All</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Cleanup Actions -->
+      <div class="action-section cleanup-actions">
+        <h4 class="section-title">
+          <span class="section-icon">🧹</span>
+          Cleanup
+        </h4>
+        <div class="button-group horizontal">
+          <button id="closeDuplicates" class="cleanup-btn action-btn">
+            <span class="btn-icon">🔄</span>
+            <span class="btn-text">Remove Duplicates</span>
+          </button>
+          <button id="closeAllTabs" class="danger-btn action-btn">
+            <span class="btn-icon">🗑️</span>
+            <span class="btn-text">Close All</span>
+          </button>
+        </div>
+      </div>
     </div>
     
     <div class="info">
