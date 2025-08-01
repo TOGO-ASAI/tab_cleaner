@@ -29,13 +29,30 @@
       </div>
     </div>
 
-    <div class="buttons">
-      <button id="closeInactiveTabs" class="primary">🚀 Close Inactive Tabs</button>
-      <button id="previewInactiveTabs">👀 Preview Inactive Tabs</button>
-      <button id="groupTabsByDomain" class="group-btn">📁 Group by Domain</button>
-      <button id="ungroupAllTabs" class="group-btn">📂 Ungroup All</button>
-      <button id="closeAllTabs">🗑️ Close All Tabs</button>
-      <button id="closeDuplicates">🔄 Close Duplicates</button>
+    <div class="action-sections">
+      <div class="action-section">
+        <h3 class="section-title">⚡ Quick Actions</h3>
+        <div class="button-group horizontal">
+          <button id="closeInactiveTabs" class="btn primary">🚀 Close Inactive</button>
+          <button id="previewInactiveTabs" class="btn secondary">👀 Preview</button>
+        </div>
+      </div>
+
+      <div class="action-section">
+        <h3 class="section-title">📁 Organization</h3>
+        <div class="button-group horizontal">
+          <button id="groupTabsByDomain" class="btn info">📁 Group by Domain</button>
+          <button id="ungroupAllTabs" class="btn info">📂 Ungroup All</button>
+        </div>
+      </div>
+
+      <div class="action-section">
+        <h3 class="section-title">🧹 Cleanup</h3>
+        <div class="button-group">
+          <button id="closeDuplicates" class="btn success">🔄 Remove Duplicates</button>
+          <button id="closeAllTabs" class="btn danger">🗑️ Close All Tabs</button>
+        </div>
+      </div>
     </div>
     
     <div class="info">
