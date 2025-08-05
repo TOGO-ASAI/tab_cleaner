@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const closeAllTabsBtn = document.getElementById('closeAllTabs');
   const closeDuplicatesBtn = document.getElementById('closeDuplicates');
   const closeInactiveTabsBtn = document.getElementById('closeInactiveTabs');
+  const archiveInactiveTabsBtn = document.getElementById('archiveInactiveTabs');
+  const viewArchivedTabsBtn = document.getElementById('viewArchivedTabs');
+  const restoreAllArchivedBtn = document.getElementById('restoreAllArchived');
   const previewInactiveTabsBtn = document.getElementById('previewInactiveTabs');
   const groupTabsByDomainBtn = document.getElementById('groupTabsByDomain');
   const ungroupAllTabsBtn = document.getElementById('ungroupAllTabs');
@@ -10,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const tabCountElement = document.getElementById('tabCount');
   const inactiveCountElement = document.getElementById('inactiveCount');
   const groupCountElement = document.getElementById('groupCount');
+  const archivedCountElement = document.getElementById('archivedCount');
 
   function loadSettings() {
     chrome.storage.sync.get(['inactiveTime', 'autoCleanup'], function(result) {
@@ -63,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tabCountElement.textContent = 'Total tabs: Error';
         inactiveCountElement.textContent = 'Inactive tabs: Error';
         groupCountElement.textContent = 'Tab groups: Error';
+        archivedCountElement.textContent = 'Archived tabs: Error';
         return;
       }
       
@@ -80,6 +85,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         groupCountElement.textContent = `Tab groups: ${groups.length}`;
       });
+
+      getArchivedTabs(function(archivedTabs) {
+        archivedCountElement.textContent = `Archived tabs: ${archivedTabs.length}`;
+      });
     });
   }
 
@@ -88,6 +97,185 @@ document.addEventListener('DOMContentLoaded', function() {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
+  }
+
+  function getArchivedTabs(callback) {
+    chrome.storage.local.get(['archivedTabs'], function(result) {
+      if (chrome.runtime.lastError) {
+        callback([]);
+        return;
+      }
+      callback(result.archivedTabs || []);
+    });
+  }
+
+  function archiveTab(tab) {
+    const archivedTab = {
+      id: Date.now() + Math.random(),
+      title: tab.title,
+      url: tab.url,
+      favIconUrl: tab.favIconUrl,
+      archivedAt: Date.now(),
+      groupId: tab.groupId
+    };
+
+    getArchivedTabs(function(archivedTabs) {
+      archivedTabs.push(archivedTab);
+      chrome.storage.local.set({ archivedTabs: archivedTabs }, function() {
+        if (chrome.runtime.lastError) {
+          return;
+        }
+      });
+    });
+  }
+
+  function archiveInactiveTabs() {
+    const inactiveMinutes = parseInt(inactiveTimeSelect.value);
+    getInactiveTabs(inactiveMinutes, function(inactiveTabs) {
+      if (inactiveTabs.length === 0) {
+        alert('No inactive tabs found.');
+        return;
+      }
+
+      const timeStr = formatTime(inactiveMinutes);
+      if (confirm(`Archive ${inactiveTabs.length} tabs inactive for more than ${timeStr}? You can restore them later.`)) {
+        inactiveTabs.forEach(tab => archiveTab(tab));
+        
+        const tabIds = inactiveTabs.map(tab => tab.id);
+        chrome.tabs.remove(tabIds, function() {
+          if (!chrome.runtime.lastError) {
+            updateTabCounts();
+            alert(`Successfully archived ${inactiveTabs.length} tabs.`);
+          }
+        });
+      }
+    });
+  }
+
+  function restoreTab(archivedTab, callback) {
+    chrome.tabs.create({
+      url: archivedTab.url,
+      active: false
+    }, function(newTab) {
+      if (chrome.runtime.lastError) {
+        callback(false);
+        return;
+      }
+      callback(true);
+    });
+  }
+
+  function showArchivedTabs() {
+    getArchivedTabs(function(archivedTabs) {
+      if (archivedTabs.length === 0) {
+        alert('No archived tabs found.');
+        return;
+      }
+
+      const tabList = archivedTabs
+        .slice(0, 10)
+        .map(tab => {
+          const archivedDate = new Date(tab.archivedAt).toLocaleDateString();
+          return `• ${tab.title || tab.url} (${archivedDate})`;
+        })
+        .join('\n');
+      
+      const moreText = archivedTabs.length > 10 ? `\n... and ${archivedTabs.length - 10} more` : '';
+      const result = confirm(`${archivedTabs.length} archived tabs:\n\n${tabList}${moreText}\n\nClick OK to see restore options, Cancel to close.`);
+      
+      if (result) {
+        showRestoreOptions(archivedTabs);
+      }
+    });
+  }
+
+  function showRestoreOptions(archivedTabs) {
+    const options = [
+      'Restore all tabs',
+      'Restore specific tabs (will show list)',
+      'Delete all archived tabs permanently'
+    ];
+    
+    const choice = prompt(`Choose an option:\n1. ${options[0]}\n2. ${options[1]}\n3. ${options[2]}\n\nEnter 1, 2, or 3:`);
+    
+    if (choice === '1') {
+      restoreAllArchivedTabs();
+    } else if (choice === '2') {
+      showSelectiveRestore(archivedTabs);
+    } else if (choice === '3') {
+      if (confirm('Permanently delete all archived tabs? This cannot be undone.')) {
+        chrome.storage.local.set({ archivedTabs: [] }, function() {
+          updateTabCounts();
+          alert('All archived tabs have been permanently deleted.');
+        });
+      }
+    }
+  }
+
+  function showSelectiveRestore(archivedTabs) {
+    const tabListWithNumbers = archivedTabs
+      .map((tab, index) => {
+        const archivedDate = new Date(tab.archivedAt).toLocaleDateString();
+        return `${index + 1}. ${tab.title || tab.url} (${archivedDate})`;
+      })
+      .join('\n');
+    
+    const indices = prompt(`Select tabs to restore by entering numbers separated by commas (e.g., 1,3,5):\n\n${tabListWithNumbers}`);
+    
+    if (indices) {
+      const selectedIndices = indices.split(',').map(i => parseInt(i.trim()) - 1).filter(i => i >= 0 && i < archivedTabs.length);
+      
+      if (selectedIndices.length > 0) {
+        let restoredCount = 0;
+        const newArchivedTabs = [...archivedTabs];
+        
+        selectedIndices.forEach(index => {
+          restoreTab(archivedTabs[index], function(success) {
+            if (success) {
+              restoredCount++;
+            }
+            
+            if (restoredCount + (selectedIndices.length - restoredCount) === selectedIndices.length) {
+              selectedIndices.sort((a, b) => b - a).forEach(index => {
+                newArchivedTabs.splice(index, 1);
+              });
+              
+              chrome.storage.local.set({ archivedTabs: newArchivedTabs }, function() {
+                updateTabCounts();
+                alert(`Restored ${restoredCount} tabs.`);
+              });
+            }
+          });
+        });
+      }
+    }
+  }
+
+  function restoreAllArchivedTabs() {
+    getArchivedTabs(function(archivedTabs) {
+      if (archivedTabs.length === 0) {
+        alert('No archived tabs to restore.');
+        return;
+      }
+
+      if (confirm(`Restore all ${archivedTabs.length} archived tabs?`)) {
+        let restoredCount = 0;
+        archivedTabs.forEach(archivedTab => {
+          restoreTab(archivedTab, function(success) {
+            if (success) {
+              restoredCount++;
+            }
+            
+            if (restoredCount + (archivedTabs.length - restoredCount) === archivedTabs.length) {
+              chrome.storage.local.set({ archivedTabs: [] }, function() {
+                updateTabCounts();
+                alert(`Restored ${restoredCount} tabs. All archived tabs have been cleared.`);
+              });
+            }
+          });
+        });
+      }
+    });
   }
 
   function getDomainFromUrl(url) {
@@ -290,6 +478,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   groupTabsByDomainBtn.addEventListener('click', groupTabsByDomain);
   ungroupAllTabsBtn.addEventListener('click', ungroupAllTabs);
+
+  archiveInactiveTabsBtn.addEventListener('click', archiveInactiveTabs);
+  viewArchivedTabsBtn.addEventListener('click', showArchivedTabs);
+  restoreAllArchivedBtn.addEventListener('click', restoreAllArchivedTabs);
 
   loadSettings();
   updateTabCounts();

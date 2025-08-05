@@ -336,6 +336,11 @@ h1 {
   transform: translateY(0);
 }
 
+.btn.small {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
 .info {
   background: var(--surface);
   border-radius: var(--radius-lg);
@@ -371,6 +376,10 @@ h1 {
 
 .info p:nth-child(2)::before {
   content: '⏱️';
+}
+
+.info p:nth-child(3)::before {
+  content: '📦';
 }
 
 .info p:last-child::before {
