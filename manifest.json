@@ -8,7 +8,8 @@
     "tabGroups",
     "storage",
     "alarms",
-    "notifications"
+    "notifications",
+    "bookmarks"
   ],
   "background": {
     "service_worker": "background.js"

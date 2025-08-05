@@ -47,6 +47,14 @@
       </div>
 
       <div class="action-section">
+        <h3 class="section-title">🔖 Bookmarks</h3>
+        <div class="button-group">
+          <button id="saveSession" class="btn primary">💾 Save Session</button>
+          <button id="manageBookmarks" class="btn secondary">📚 Manage Bookmarks</button>
+        </div>
+      </div>
+
+      <div class="action-section">
         <h3 class="section-title">🧹 Cleanup</h3>
         <div class="button-group">
           <button id="closeDuplicates" class="btn success">🔄 Remove Duplicates</button>
@@ -55,10 +63,34 @@
       </div>
     </div>
     
+    <!-- Bookmark Management Modal -->
+    <div id="bookmarkModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>📚 Bookmark Manager</h3>
+          <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+          <div class="bookmark-search">
+            <input type="text" id="bookmarkSearch" placeholder="🔍 Search bookmarks..." />
+          </div>
+          <div class="bookmark-actions">
+            <button id="restoreAllSessions" class="btn info">🔄 Restore All Sessions</button>
+            <button id="cleanupBookmarks" class="btn warning">🧹 Cleanup Dead Links</button>
+            <button id="exportBookmarks" class="btn secondary">📤 Export Sessions</button>
+          </div>
+          <div id="bookmarkList" class="bookmark-list">
+            <div class="loading">Loading bookmarks...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="info">
       <p id="tabCount">Loading...</p>
       <p id="inactiveCount">Inactive tabs: 0</p>
       <p id="groupCount">Tab groups: 0</p>
+      <p id="sessionCount">Saved sessions: 0</p>
     </div>
   </div>
   <script src="popup.js"></script>

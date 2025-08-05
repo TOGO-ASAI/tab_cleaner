@@ -5,11 +5,23 @@ document.addEventListener('DOMContentLoaded', function() {
   const previewInactiveTabsBtn = document.getElementById('previewInactiveTabs');
   const groupTabsByDomainBtn = document.getElementById('groupTabsByDomain');
   const ungroupAllTabsBtn = document.getElementById('ungroupAllTabs');
+  const saveSessionBtn = document.getElementById('saveSession');
+  const manageBookmarksBtn = document.getElementById('manageBookmarks');
   const inactiveTimeSelect = document.getElementById('inactiveTime');
   const autoCleanupCheckbox = document.getElementById('autoCleanup');
   const tabCountElement = document.getElementById('tabCount');
   const inactiveCountElement = document.getElementById('inactiveCount');
   const groupCountElement = document.getElementById('groupCount');
+  const sessionCountElement = document.getElementById('sessionCount');
+  
+  // Bookmark modal elements
+  const bookmarkModal = document.getElementById('bookmarkModal');
+  const closeModal = document.querySelector('.close');
+  const bookmarkSearch = document.getElementById('bookmarkSearch');
+  const restoreAllSessionsBtn = document.getElementById('restoreAllSessions');
+  const cleanupBookmarksBtn = document.getElementById('cleanupBookmarks');
+  const exportBookmarksBtn = document.getElementById('exportBookmarks');
+  const bookmarkList = document.getElementById('bookmarkList');
 
   function loadSettings() {
     chrome.storage.sync.get(['inactiveTime', 'autoCleanup'], function(result) {
@@ -63,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tabCountElement.textContent = 'Total tabs: Error';
         inactiveCountElement.textContent = 'Inactive tabs: Error';
         groupCountElement.textContent = 'Tab groups: Error';
+        sessionCountElement.textContent = 'Saved sessions: Error';
         return;
       }
       
@@ -80,6 +93,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         groupCountElement.textContent = `Tab groups: ${groups.length}`;
       });
+
+      updateSessionCount();
+    });
+  }
+
+  function updateSessionCount() {
+    chrome.bookmarks.getSubTree('1', function(bookmarkTree) {
+      if (chrome.runtime.lastError) {
+        sessionCountElement.textContent = 'Saved sessions: Error';
+        return;
+      }
+      
+      const tabCleanerFolder = findTabCleanerFolder(bookmarkTree[0]);
+      if (tabCleanerFolder) {
+        const sessionCount = tabCleanerFolder.children ? tabCleanerFolder.children.length : 0;
+        sessionCountElement.textContent = `Saved sessions: ${sessionCount}`;
+      } else {
+        sessionCountElement.textContent = 'Saved sessions: 0';
+      }
     });
   }
 
@@ -290,6 +322,378 @@ document.addEventListener('DOMContentLoaded', function() {
 
   groupTabsByDomainBtn.addEventListener('click', groupTabsByDomain);
   ungroupAllTabsBtn.addEventListener('click', ungroupAllTabs);
+
+  // Bookmark functionality
+  function findTabCleanerFolder(bookmarksBar) {
+    if (!bookmarksBar || !bookmarksBar.children) return null;
+    return bookmarksBar.children.find(folder => folder.title === 'Tab Cleaner Sessions');
+  }
+
+  function createTabCleanerFolder(callback) {
+    chrome.bookmarks.create({
+      parentId: '1',
+      title: 'Tab Cleaner Sessions'
+    }, callback);
+  }
+
+  function saveCurrentSession() {
+    chrome.tabs.query({}, function(tabs) {
+      if (chrome.runtime.lastError || tabs.length === 0) {
+        alert('Error: Could not access tabs or no tabs found.');
+        return;
+      }
+
+      const sessionName = prompt('Enter session name:', `Session ${new Date().toLocaleDateString()}`);
+      if (!sessionName) return;
+
+      chrome.bookmarks.getSubTree('1', function(bookmarkTree) {
+        if (chrome.runtime.lastError) {
+          alert('Error accessing bookmarks.');
+          return;
+        }
+
+        let tabCleanerFolder = findTabCleanerFolder(bookmarkTree[0]);
+        
+        function createSession(folderId) {
+          chrome.bookmarks.create({
+            parentId: folderId,
+            title: sessionName
+          }, function(sessionFolder) {
+            if (chrome.runtime.lastError) {
+              alert('Error creating session folder.');
+              return;
+            }
+
+            let createdCount = 0;
+            const totalTabs = tabs.length;
+
+            tabs.forEach(tab => {
+              if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
+                createdCount++;
+                if (createdCount === totalTabs) {
+                  alert(`Session "${sessionName}" saved with ${totalTabs} tabs.`);
+                  updateSessionCount();
+                }
+                return;
+              }
+
+              chrome.bookmarks.create({
+                parentId: sessionFolder.id,
+                title: tab.title || tab.url,
+                url: tab.url
+              }, function() {
+                createdCount++;
+                if (createdCount === totalTabs) {
+                  alert(`Session "${sessionName}" saved with ${totalTabs} tabs.`);
+                  updateSessionCount();
+                }
+              });
+            });
+          });
+        }
+
+        if (tabCleanerFolder) {
+          createSession(tabCleanerFolder.id);
+        } else {
+          createTabCleanerFolder(function(folder) {
+            if (chrome.runtime.lastError) {
+              alert('Error creating Tab Cleaner folder.');
+              return;
+            }
+            createSession(folder.id);
+          });
+        }
+      });
+    });
+  }
+
+  function loadBookmarkSessions() {
+    chrome.bookmarks.getSubTree('1', function(bookmarkTree) {
+      if (chrome.runtime.lastError) {
+        bookmarkList.innerHTML = '<div class="loading">Error loading bookmarks.</div>';
+        return;
+      }
+
+      const tabCleanerFolder = findTabCleanerFolder(bookmarkTree[0]);
+      if (!tabCleanerFolder || !tabCleanerFolder.children || tabCleanerFolder.children.length === 0) {
+        bookmarkList.innerHTML = '<div class="loading">No saved sessions found.</div>';
+        return;
+      }
+
+      const sessions = tabCleanerFolder.children;
+      let html = '';
+
+      sessions.forEach(session => {
+        const tabCount = session.children ? session.children.length : 0;
+        const sessionDate = new Date(session.dateAdded).toLocaleDateString();
+        
+        html += `
+          <div class="bookmark-session" data-session-id="${session.id}">
+            <div class="session-header" onclick="toggleSession('${session.id}')">
+              <div>
+                <div class="session-title">${session.title}</div>
+                <div class="session-meta">${tabCount} tabs • ${sessionDate}</div>
+              </div>
+              <div class="session-actions" onclick="event.stopPropagation()">
+                <button class="btn secondary" onclick="restoreSession('${session.id}')">🔄 Restore</button>
+                <button class="btn danger" onclick="deleteSession('${session.id}')">🗑️ Delete</button>
+              </div>
+            </div>
+            <div class="session-tabs" id="tabs-${session.id}">
+        `;
+
+        if (session.children) {
+          session.children.forEach(bookmark => {
+            if (bookmark.url) {
+              const favicon = `https://www.google.com/s2/favicons?domain=${new URL(bookmark.url).hostname}&sz=16`;
+              html += `
+                <div class="tab-item">
+                  <img class="tab-favicon" src="${favicon}" onerror="this.style.display='none'" />
+                  <div class="tab-info">
+                    <div class="tab-title">${bookmark.title}</div>
+                    <div class="tab-url">${bookmark.url}</div>
+                  </div>
+                </div>
+              `;
+            }
+          });
+        }
+
+        html += `</div></div>`;
+      });
+
+      bookmarkList.innerHTML = html;
+    });
+  }
+
+  function restoreSession(sessionId) {
+    if (!confirm('Restore this session? This will open all tabs from this session.')) return;
+
+    chrome.bookmarks.getSubTree(sessionId, function(sessionTree) {
+      if (chrome.runtime.lastError || !sessionTree[0].children) {
+        alert('Error loading session.');
+        return;
+      }
+
+      const bookmarks = sessionTree[0].children.filter(bookmark => bookmark.url);
+      if (bookmarks.length === 0) {
+        alert('No valid URLs found in this session.');
+        return;
+      }
+
+      bookmarks.forEach(bookmark => {
+        chrome.tabs.create({ url: bookmark.url, active: false });
+      });
+
+      alert(`Restored ${bookmarks.length} tabs from session.`);
+    });
+  }
+
+  function deleteSession(sessionId) {
+    chrome.bookmarks.getSubTree(sessionId, function(sessionTree) {
+      if (chrome.runtime.lastError) return;
+      
+      const sessionName = sessionTree[0].title;
+      if (!confirm(`Delete session "${sessionName}"? This action cannot be undone.`)) return;
+
+      chrome.bookmarks.removeTree(sessionId, function() {
+        if (chrome.runtime.lastError) {
+          alert('Error deleting session.');
+          return;
+        }
+        
+        loadBookmarkSessions();
+        updateSessionCount();
+        alert(`Session "${sessionName}" deleted.`);
+      });
+    });
+  }
+
+  function toggleSession(sessionId) {
+    const tabsElement = document.getElementById(`tabs-${sessionId}`);
+    if (tabsElement) {
+      tabsElement.classList.toggle('expanded');
+    }
+  }
+
+  function restoreAllSessions() {
+    if (!confirm('Restore all saved sessions? This will open all tabs from all sessions.')) return;
+
+    chrome.bookmarks.getSubTree('1', function(bookmarkTree) {
+      if (chrome.runtime.lastError) {
+        alert('Error accessing bookmarks.');
+        return;
+      }
+
+      const tabCleanerFolder = findTabCleanerFolder(bookmarkTree[0]);
+      if (!tabCleanerFolder || !tabCleanerFolder.children || tabCleanerFolder.children.length === 0) {
+        alert('No saved sessions found.');
+        return;
+      }
+
+      let totalTabs = 0;
+      tabCleanerFolder.children.forEach(session => {
+        if (session.children) {
+          session.children.forEach(bookmark => {
+            if (bookmark.url) {
+              chrome.tabs.create({ url: bookmark.url, active: false });
+              totalTabs++;
+            }
+          });
+        }
+      });
+
+      alert(`Restored ${totalTabs} tabs from ${tabCleanerFolder.children.length} sessions.`);
+    });
+  }
+
+  function cleanupDeadBookmarks() {
+    if (!confirm('Remove dead/broken bookmarks? This will check all bookmark links.')) return;
+
+    chrome.bookmarks.getSubTree('1', function(bookmarkTree) {
+      if (chrome.runtime.lastError) {
+        alert('Error accessing bookmarks.');
+        return;
+      }
+
+      const tabCleanerFolder = findTabCleanerFolder(bookmarkTree[0]);
+      if (!tabCleanerFolder || !tabCleanerFolder.children) {
+        alert('No saved sessions found.');
+        return;
+      }
+
+      let checkedCount = 0;
+      let removedCount = 0;
+      let totalBookmarks = 0;
+
+      tabCleanerFolder.children.forEach(session => {
+        if (session.children) {
+          totalBookmarks += session.children.length;
+        }
+      });
+
+      if (totalBookmarks === 0) {
+        alert('No bookmarks to check.');
+        return;
+      }
+
+      tabCleanerFolder.children.forEach(session => {
+        if (session.children) {
+          session.children.forEach(bookmark => {
+            if (bookmark.url) {
+              fetch(bookmark.url, { method: 'HEAD', mode: 'no-cors' })
+                .catch(() => {
+                  chrome.bookmarks.remove(bookmark.id);
+                  removedCount++;
+                })
+                .finally(() => {
+                  checkedCount++;
+                  if (checkedCount === totalBookmarks) {
+                    alert(`Cleanup complete. Removed ${removedCount} dead bookmarks.`);
+                    loadBookmarkSessions();
+                    updateSessionCount();
+                  }
+                });
+            } else {
+              checkedCount++;
+              if (checkedCount === totalBookmarks) {
+                alert(`Cleanup complete. Removed ${removedCount} dead bookmarks.`);
+                loadBookmarkSessions();
+                updateSessionCount();
+              }
+            }
+          });
+        }
+      });
+    });
+  }
+
+  function exportBookmarkSessions() {
+    chrome.bookmarks.getSubTree('1', function(bookmarkTree) {
+      if (chrome.runtime.lastError) {
+        alert('Error accessing bookmarks.');
+        return;
+      }
+
+      const tabCleanerFolder = findTabCleanerFolder(bookmarkTree[0]);
+      if (!tabCleanerFolder || !tabCleanerFolder.children || tabCleanerFolder.children.length === 0) {
+        alert('No saved sessions found.');
+        return;
+      }
+
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        sessions: tabCleanerFolder.children.map(session => ({
+          title: session.title,
+          dateAdded: session.dateAdded,
+          tabs: session.children ? session.children.map(bookmark => ({
+            title: bookmark.title,
+            url: bookmark.url
+          })).filter(tab => tab.url) : []
+        }))
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tab-cleaner-sessions-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      alert('Sessions exported successfully!');
+    });
+  }
+
+  function filterBookmarks(searchTerm) {
+    const sessions = document.querySelectorAll('.bookmark-session');
+    const term = searchTerm.toLowerCase();
+
+    sessions.forEach(session => {
+      const sessionTitle = session.querySelector('.session-title').textContent.toLowerCase();
+      const tabTitles = Array.from(session.querySelectorAll('.tab-title')).map(el => el.textContent.toLowerCase());
+      const tabUrls = Array.from(session.querySelectorAll('.tab-url')).map(el => el.textContent.toLowerCase());
+
+      const matches = sessionTitle.includes(term) || 
+                     tabTitles.some(title => title.includes(term)) ||
+                     tabUrls.some(url => url.includes(term));
+
+      session.style.display = matches ? 'block' : 'none';
+    });
+  }
+
+  // Global functions for onclick handlers
+  window.toggleSession = toggleSession;
+  window.restoreSession = restoreSession;
+  window.deleteSession = deleteSession;
+
+  // Event listeners for bookmark functionality
+  saveSessionBtn.addEventListener('click', saveCurrentSession);
+  
+  manageBookmarksBtn.addEventListener('click', function() {
+    bookmarkModal.style.display = 'block';
+    loadBookmarkSessions();
+  });
+
+  closeModal.addEventListener('click', function() {
+    bookmarkModal.style.display = 'none';
+  });
+
+  window.addEventListener('click', function(event) {
+    if (event.target === bookmarkModal) {
+      bookmarkModal.style.display = 'none';
+    }
+  });
+
+  bookmarkSearch.addEventListener('input', function() {
+    filterBookmarks(this.value);
+  });
+
+  restoreAllSessionsBtn.addEventListener('click', restoreAllSessions);
+  cleanupBookmarksBtn.addEventListener('click', cleanupDeadBookmarks);
+  exportBookmarksBtn.addEventListener('click', exportBookmarkSessions);
 
   loadSettings();
   updateTabCounts();
