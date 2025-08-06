@@ -33,8 +33,19 @@
       <div class="action-section">
         <h3 class="section-title">⚡ Quick Actions</h3>
         <div class="button-group horizontal">
-          <button id="closeInactiveTabs" class="btn primary">🚀 Close Inactive</button>
+          <button id="archiveInactiveTabs" class="btn primary">📦 Archive Inactive</button>
           <button id="previewInactiveTabs" class="btn secondary">👀 Preview</button>
+        </div>
+        <div class="button-group horizontal">
+          <button id="closeInactiveTabs" class="btn danger small">🗑️ Delete Forever</button>
+        </div>
+      </div>
+
+      <div class="action-section">
+        <h3 class="section-title">📦 Archive Management</h3>
+        <div class="button-group horizontal">
+          <button id="viewArchivedTabs" class="btn info">📋 View Archived</button>
+          <button id="restoreAllArchived" class="btn success">🔄 Restore All</button>
         </div>
       </div>
 
@@ -58,6 +69,7 @@
     <div class="info">
       <p id="tabCount">Loading...</p>
       <p id="inactiveCount">Inactive tabs: 0</p>
+      <p id="archivedCount">Archived tabs: 0</p>
       <p id="groupCount">Tab groups: 0</p>
     </div>
   </div>

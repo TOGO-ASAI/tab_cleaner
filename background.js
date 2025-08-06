@@ -7,6 +7,8 @@ chrome.runtime.onInstalled.addListener(() => {
       setupAutoCleanup(result.inactiveTime || 60);
     }
   });
+  
+  setupArchiveCleanup();
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -24,6 +26,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'autoCleanup') {
     performAutoCleanup();
+  } else if (alarm.name === 'archiveCleanup') {
+    performArchiveCleanup();
   }
 });
 
@@ -92,3 +96,41 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.action.onClicked.addListener((tab) => {
   // Extension icon clicked - handled by popup
 });
+
+function setupArchiveCleanup() {
+  chrome.alarms.clear('archiveCleanup');
+  
+  chrome.alarms.create('archiveCleanup', {
+    delayInMinutes: 60,
+    periodInMinutes: 60
+  });
+}
+
+function performArchiveCleanup() {
+  chrome.storage.local.get(['archivedTabs'], function(result) {
+    if (chrome.runtime.lastError) {
+      return;
+    }
+    
+    const archivedTabs = result.archivedTabs || [];
+    const cutoffTime = Date.now() - (24 * 60 * 60 * 1000);
+    
+    const remainingTabs = archivedTabs.filter(tab => tab.archivedAt > cutoffTime);
+    const deletedCount = archivedTabs.length - remainingTabs.length;
+    
+    if (deletedCount > 0) {
+      chrome.storage.local.set({ archivedTabs: remainingTabs }, function() {
+        if (!chrome.runtime.lastError && deletedCount > 0) {
+          chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'icons/icon.png',
+            title: 'Tab Cleaner - Archive Cleanup',
+            message: `Automatically deleted ${deletedCount} archived tabs older than 24 hours`
+          }, function() {
+            // Notification created
+          });
+        }
+      });
+    }
+  });
+}
