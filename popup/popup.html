@@ -8,57 +8,60 @@
   <div class="container">
     <h1>🧹 Tab Cleaner</h1>
     
-    <div class="settings">
-      <h3>Inactive Tab Settings</h3>
-      <div class="setting-group">
-        <label for="inactiveTime">Close tabs inactive for:</label>
+    <!-- Status indicators -->
+    <div class="status-bar">
+      <div class="status-item" title="Total open tabs">
+        <span class="status-icon">📊</span>
+        <span id="tabCount">0</span>
+        <span class="status-label">Total</span>
+      </div>
+      <div class="status-item" title="Inactive tabs ready to close">
+        <span class="status-icon">⏱️</span>
+        <span id="inactiveCount">0</span>
+        <span class="status-label">Inactive</span>
+      </div>
+      <div class="status-item" title="Active tab groups">
+        <span class="status-icon">📁</span>
+        <span id="groupCount">0</span>
+        <span class="status-label">Groups</span>
+      </div>
+    </div>
+
+    <!-- Main actions -->
+    <div class="main-actions">
+      <button id="closeInactiveTabs" class="btn primary large">🚀 Clean Inactive Tabs</button>
+      <div class="quick-actions">
+        <button id="previewInactiveTabs" class="btn secondary">👀 Preview</button>
+        <button id="closeDuplicates" class="btn secondary">🔄 Remove Duplicates</button>
+      </div>
+    </div>
+
+    <!-- Settings section -->
+    <div class="settings-compact">
+      <div class="setting-row">
+        <label for="inactiveTime">Inactive after:</label>
         <select id="inactiveTime">
-          <option value="30">30 minutes</option>
-          <option value="60">1 hour</option>
-          <option value="180">3 hours</option>
-          <option value="360">6 hours</option>
-          <option value="720">12 hours</option>
-          <option value="1440">24 hours</option>
+          <option value="30">30min</option>
+          <option value="60">1h</option>
+          <option value="180">3h</option>
+          <option value="360">6h</option>
+          <option value="720">12h</option>
+          <option value="1440">24h</option>
         </select>
       </div>
-      <div class="setting-group">
-        <div class="checkbox-wrapper">
-          <input type="checkbox" id="autoCleanup">
-          <label for="autoCleanup">Auto cleanup</label>
-        </div>
+      <div class="setting-row">
+        <label for="autoCleanup">Auto cleanup</label>
+        <input type="checkbox" id="autoCleanup">
       </div>
     </div>
 
-    <div class="action-sections">
-      <div class="action-section">
-        <h3 class="section-title">⚡ Quick Actions</h3>
-        <div class="button-group horizontal">
-          <button id="closeInactiveTabs" class="btn primary">🚀 Close Inactive</button>
-          <button id="previewInactiveTabs" class="btn secondary">👀 Preview</button>
-        </div>
+    <!-- Secondary actions -->
+    <div class="secondary-actions">
+      <div class="action-group">
+        <button id="groupTabsByDomain" class="btn info small">📁 Group by Domain</button>
+        <button id="ungroupAllTabs" class="btn info small">📂 Ungroup All</button>
       </div>
-
-      <div class="action-section">
-        <h3 class="section-title">📁 Organization</h3>
-        <div class="button-group horizontal">
-          <button id="groupTabsByDomain" class="btn info">📁 Group by Domain</button>
-          <button id="ungroupAllTabs" class="btn info">📂 Ungroup All</button>
-        </div>
-      </div>
-
-      <div class="action-section">
-        <h3 class="section-title">🧹 Cleanup</h3>
-        <div class="button-group">
-          <button id="closeDuplicates" class="btn success">🔄 Remove Duplicates</button>
-          <button id="closeAllTabs" class="btn danger">🗑️ Close All Tabs</button>
-        </div>
-      </div>
-    </div>
-    
-    <div class="info">
-      <p id="tabCount">Loading...</p>
-      <p id="inactiveCount">Inactive tabs: 0</p>
-      <p id="groupCount">Tab groups: 0</p>
+      <button id="closeAllTabs" class="btn danger small">🗑️ Close All Tabs</button>
     </div>
   </div>
   <script src="popup.js"></script>
