@@ -60,25 +60,25 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateTabCounts() {
     chrome.tabs.query({}, function(tabs) {
       if (chrome.runtime.lastError) {
-        tabCountElement.textContent = 'Total tabs: Error';
-        inactiveCountElement.textContent = 'Inactive tabs: Error';
-        groupCountElement.textContent = 'Tab groups: Error';
+        tabCountElement.textContent = 'Error';
+        inactiveCountElement.textContent = 'Error';
+        groupCountElement.textContent = 'Error';
         return;
       }
       
-      tabCountElement.textContent = `Total tabs: ${tabs.length}`;
+      tabCountElement.textContent = tabs.length;
       
       const inactiveMinutes = parseInt(inactiveTimeSelect.value);
       getInactiveTabs(inactiveMinutes, function(inactiveTabs) {
-        inactiveCountElement.textContent = `Inactive tabs: ${inactiveTabs.length}`;
+        inactiveCountElement.textContent = inactiveTabs.length;
       });
 
       chrome.tabGroups.query({}, function(groups) {
         if (chrome.runtime.lastError) {
-          groupCountElement.textContent = 'Tab groups: Error';
+          groupCountElement.textContent = 'Error';
           return;
         }
-        groupCountElement.textContent = `Tab groups: ${groups.length}`;
+        groupCountElement.textContent = groups.length;
       });
     });
   }
